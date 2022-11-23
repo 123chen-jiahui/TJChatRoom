@@ -6,8 +6,12 @@ type User struct {
 	Account  string   `json:"account"`  // 账号（学号）
 	Passwd   string   `json:"passwd"`   // 密码
 	NickName string   `json:"nickName"` // 昵称
-	Friends  []string // 所加好友
+	Friends  []Friend // 所加好友
 	Group    []string // 加入的群聊
+}
+
+type Friend struct {
+	Friend string `json:"friend"`
 }
 
 type Group struct {

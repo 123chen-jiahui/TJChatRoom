@@ -5,6 +5,7 @@ go 1.19
 require github.com/gorilla/websocket v1.5.0
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
@@ -20,13 +21,17 @@ require (
 )
 
 require (
-	github.com/tool v0.0.0
 	github.com/db v0.0.0
 	github.com/entity v0.0.0
+	github.com/method v0.0.0
+	github.com/tool v0.0.0
+	github.com/dto v0.0.0
 )
 
 replace (
-	github.com/tool => ./tool
 	github.com/db => ./db
 	github.com/entity => ./entity
+	github.com/method => ./method
+	github.com/tool => ./tool
+	github.com/dto => ./dto
 )

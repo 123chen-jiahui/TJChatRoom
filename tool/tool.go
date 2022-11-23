@@ -8,11 +8,12 @@ import (
 )
 
 type MongoConfig struct {
-	User   string `json:"mongoUser"`
-	Passwd string `json:"mongoPasswd"`
-	Host   string `json:"mongoHost"`
-	Port   string `json:"mongoPort"`
-	DbName string `json:"mongoDbName"`
+	User      string `json:"mongoUser"`
+	Passwd    string `json:"mongoPasswd"`
+	Host      string `json:"mongoHost"`
+	Port      string `json:"mongoPort"`
+	DbName    string `json:"mongoDbName"`
+	SecretStr string `json:"secretStr"`
 }
 
 var MConfig MongoConfig
@@ -30,11 +31,10 @@ func init() {
 	}
 
 	// "mongodb://root:123456@118.31.108.144:27017"
-	MongoUrl = fmt.Sprintf("mongodb://%s:%s@%s:%s/%s",
+	MongoUrl = fmt.Sprintf("mongodb://%s:%s@%s:%s",
 		MConfig.User,
 		MConfig.Passwd,
 		MConfig.Host,
 		MConfig.Port,
-		MConfig.DbName,
 	)
 }
