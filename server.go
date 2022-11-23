@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/db"
 	"github.com/dto"
-	"github.com/entity"
 	"github.com/gorilla/websocket"
 	"github.com/method"
 	"github.com/tool"
@@ -20,7 +18,6 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	db.FindOnd("user")
 	http.HandleFunc("/ws", wsEndpoint)
 	http.HandleFunc("/register", register)     // 注册
 	http.HandleFunc("/login", login)           // 登录
@@ -71,11 +68,12 @@ func register(w http.ResponseWriter, r *http.Request) {
 	cros(&w)
 	switch r.Method {
 	case http.MethodPost:
-		var user entity.User
+		var userForCreationDto dto.UserForCreationDto
+		//var user entity.User
 		decoder := json.NewDecoder(r.Body)
-		_ = decoder.Decode(&user)
-		fmt.Println(user)
+		_ = decoder.Decode(&userForCreationDto)
 		//err := db.InsertUser(user)
+		user := method.MapUser(userForCreationDto)
 		err := method.AddUser(user)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

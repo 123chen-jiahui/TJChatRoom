@@ -1,11 +1,24 @@
 package method
 
 import (
-	"fmt"
 	"github.com/db"
+	"github.com/dto"
 	"github.com/entity"
 	"github.com/tool"
 )
+
+func MapUser(from dto.UserForCreationDto) (to entity.User) {
+	to = entity.User{
+		Account:  from.Account,
+		Passwd:   from.Passwd,
+		NickName: from.NickName,
+		Friends:  nil,
+		Group:    nil,
+	}
+	initFriend := entity.Friend{Friend: to.Account}
+	to.Friends = append(to.Friends, initFriend)
+	return to
+}
 
 func CheckLogin(account, passwd string) (token string, err error) {
 	token = ""
@@ -16,20 +29,13 @@ func CheckLogin(account, passwd string) (token string, err error) {
 	}
 	if user.Passwd == passwd {
 		token, err = tool.GenerateToken(account)
-		if err != nil {
-			fmt.Println("寄")
-		}
 	}
 	return
 }
 
-func AddUser(user entity.User) error {
-	f := entity.Friend{
-		Friend: user.Account,
-	}
-	user.Friends = append(user.Friends, f)
-	err := db.InsertUser(user)
-	return err
+func AddUser(user entity.User) (err error) {
+	err = db.InsertUser(user)
+	return
 }
 
 func AddFriend(account, friend string) {

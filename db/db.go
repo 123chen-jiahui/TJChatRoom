@@ -64,21 +64,3 @@ func FindUserByAccount(account string) (entity.User, error) {
 	}
 	return user, err
 }
-
-// FindOnd 查询
-func FindOnd(collection string) {
-	var result bson.M
-	table := DB.Collection(collection)
-	err := table.FindOne(context.TODO(), bson.M{"name": "CJH"}).Decode(&result) //
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-	}
-	fmt.Printf("%v\n", result)
-
-	fmt.Println(result["age"])
-	//v, err := encoder.Encode(result, encoder.SortMapKeys)
-	//if err != nil {
-	//	fmt.Printf("%v\n", err)
-	//}
-	//fmt.Println(string(v))
-}

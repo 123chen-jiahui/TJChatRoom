@@ -2,10 +2,12 @@ package entity
 
 import "time"
 
+// 实体集
+
 type User struct {
-	Account  string   `json:"account"`  // 账号（学号）
-	Passwd   string   `json:"passwd"`   // 密码
-	NickName string   `json:"nickName"` // 昵称
+	Account  string
+	Passwd   string
+	NickName string
 	Friends  []Friend // 所加好友
 	Group    []string // 加入的群聊
 }
