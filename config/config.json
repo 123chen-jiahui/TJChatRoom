@@ -1,0 +1,7 @@
+{
+  "mongoUser": "root",
+  "mongoPasswd": "123456",
+  "mongoHost": "118.31.108.144",
+  "mongoPort": "27017",
+  "mongoDbName": "admin"
+}
