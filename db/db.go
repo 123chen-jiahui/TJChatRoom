@@ -54,13 +54,38 @@ func PushFriend(account, friend string) {
 	log.Println("添加成功")
 }
 
+// PullFriend 删除account的好友friend
+// 返回值为删除的数目
+func PullFriend(account, friend string) int64 {
+	table := DB.Collection("User")
+	filter := bson.M{"account": account}
+	update := bson.M{"$pull": bson.M{"friends": bson.M{"friend": friend}}}
+
+	one, err := table.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		log.Println(err)
+		return 0
+	}
+	return one.ModifiedCount
+}
+
+func FriendExist(account, friend string) bool {
+	table := DB.Collection("User")
+	filter := bson.M{"friends": bson.M{"friend": friend}, "account": account}
+	err := table.FindOne(context.TODO(), filter).Err()
+	return !(err == mongo.ErrNoDocuments)
+}
+
 func FindUserByAccount(account string) (entity.User, error) {
 	var user entity.User
 	table := DB.Collection("User")
+	table.Find(context.TODO(), bson.M{"account": account})
 	err := table.FindOne(context.TODO(), bson.M{"account": account}).Decode(&user)
 	fmt.Println("hello, world", user)
 	if err != nil {
-		fmt.Println("holy shit")
+		if err == mongo.ErrNoDocuments {
+			fmt.Println("未找到记录")
+		}
 	}
 	return user, err
 }
