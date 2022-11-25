@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// MapUser 将UserForCreationDto映射为User
 func MapUser(from dto.UserForCreationDto) (to entity.User) {
 	to = entity.User{
 		Account:  from.Account,
@@ -20,6 +21,16 @@ func MapUser(from dto.UserForCreationDto) (to entity.User) {
 	initFriend := entity.Friend{Friend: to.Account}
 	to.Friends = append(to.Friends, initFriend)
 	return to
+}
+
+// MapUserToUserInfoDto 将User映射为UserInfoDto
+func MapUserToUserInfoDto(from entity.User) (to dto.UserInfoDto) {
+	to = dto.UserInfoDto{
+		Account:  from.Account,
+		Passwd:   from.Passwd,
+		NickName: from.NickName,
+	}
+	return
 }
 
 func UserExist(account string) (bool, error) {
@@ -51,6 +62,15 @@ func AddUser(user entity.User) (err error) {
 
 func AddFriend(account, friend string) {
 	db.PushFriend(account, friend)
+}
+
+func GetFriends(account string) []dto.UserInfoDto {
+	users := db.GetFriends(account)
+	var usersInfoDto []dto.UserInfoDto
+	for _, u := range users {
+		usersInfoDto = append(usersInfoDto, MapUserToUserInfoDto(u))
+	}
+	return usersInfoDto
 }
 
 func DeleteFriend(account, friend string) bool {

@@ -141,6 +141,11 @@ func handleFriends(w http.ResponseWriter, r *http.Request) {
 	friend := friendDto.Account
 
 	switch r.Method {
+	case http.MethodGet:
+		friends := method.GetFriends(account)
+		res, _ := json.Marshal(friends)
+		w.WriteHeader(http.StatusOK)
+		w.Write(res)
 	case http.MethodPost:
 		// 判断被添加者的账号是否存在
 		exist, err := method.UserExist(friend)

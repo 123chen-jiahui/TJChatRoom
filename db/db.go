@@ -76,6 +76,22 @@ func FriendExist(account, friend string) bool {
 	return !(err == mongo.ErrNoDocuments)
 }
 
+func GetFriends(account string) []entity.User {
+	var me entity.User
+	table := DB.Collection("User")
+	table.FindOne(context.TODO(), bson.M{"account": account}).Decode(&me)
+	friends := me.Friends
+
+	var users []entity.User
+	var tmp entity.User
+	for _, f := range friends {
+		table.FindOne(context.TODO(), bson.M{"account": f.Friend}).Decode(&tmp)
+		users = append(users, tmp)
+	}
+	fmt.Println(users)
+	return users
+}
+
 func FindUserByAccount(account string) (entity.User, error) {
 	var user entity.User
 	table := DB.Collection("User")
