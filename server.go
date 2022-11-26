@@ -6,10 +6,10 @@ import (
 	"github.com/dto"
 	"github.com/gorilla/websocket"
 	"github.com/method"
+	"github.com/socket"
 	"github.com/tool"
 	"log"
 	"net/http"
-	"time"
 )
 
 var upgrader = websocket.Upgrader{
@@ -18,11 +18,66 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	http.HandleFunc("/ws", wsEndpoint)
-	http.HandleFunc("/register", register)     // 注册
-	http.HandleFunc("/login", login)           // 登录
-	http.HandleFunc("/friends", handleFriends) // 添加好友
+	http.HandleFunc("/ws", wsEndpoint)           // 建立websocket连接
+	http.HandleFunc("/register", register)       // 注册
+	http.HandleFunc("/login", login)             // 登录
+	http.HandleFunc("/friends", handleFriends)   // 添加好友
+	http.HandleFunc("/groups", handleGroups)     // 群聊
+	http.HandleFunc("/messages", handleMessages) // 发送信息
 	http.ListenAndServe(":8888", nil)
+}
+
+// 创建群聊请求格式
+/*
+{
+	name: string
+	owner: string
+	members: []string
+}
+*/
+func handleGroups(writer http.ResponseWriter, request *http.Request) {
+	cros(&writer)
+	token := request.Header.Get("Authorization")
+	if len(token) < 8 {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	account := tool.ParseToken(token[7:]) // 获取token
+	if account == "" {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	switch request.Method {
+	case http.MethodPost:
+		var groupForCreationDto dto.GroupForCreationDto
+		decoder := json.NewDecoder(request.Body)
+		_ = decoder.Decode(&groupForCreationDto)
+		group := groupForCreationDto.MapToGroup()
+		// 懒得检查了，直接添加
+		method.AddGroup(group)
+	case http.MethodGet: // 获取所有群聊信息（包括群聊_id)
+		groups := method.GetGroups(account)
+		res, _ := json.Marshal(groups)
+		writer.Write(res)
+	case http.MethodOptions:
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+// 信息格式
+/*
+{
+	sender: string
+	receiver: string
+	isGroup: bool
+	groupId: xxx
+	contentType: xxx
+	content: string
+	sendTime: time
+}
+*/
+func handleMessages(writer http.ResponseWriter, request *http.Request) {
+	cros(&writer)
 }
 
 // 解决跨域问题
@@ -33,21 +88,31 @@ func cros(writer *http.ResponseWriter) {
 }
 
 func reader(conn *websocket.Conn) {
-	time.Sleep(time.Second * 3)
+	fmt.Println("jjjjjjjjjjjjjjjjjjj")
+	// 将客户端信息放入liveClients中
+	_, p, _ := conn.ReadMessage()
+	chHb := socket.AddToLiveClients(string(p), conn)
+	// 开一个goroutine发送心跳检测
+	//go socket.HeartBeat(string(p), conn, chHb)
+
 	for {
 		// read in a message
-		messageType, p, err := conn.ReadMessage()
+		_, p, err := conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			return
 		}
 		// print out that message for clarity
-		fmt.Println(string(p))
-
-		if err := conn.WriteMessage(messageType, []byte("Hello from GoLang!")); err != nil {
-			log.Println(err)
-			return
+		if string(p) == "pong" {
+			chHb <- true
 		}
+
+		fmt.Println("收到", string(p))
+
+		//if err := conn.WriteMessage(messageType, []byte("Hello from GoLang!")); err != nil {
+		//	log.Println(err)
+		//	return
+		//}
 	}
 }
 
@@ -127,7 +192,10 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 func handleFriends(w http.ResponseWriter, r *http.Request) {
 	cros(&w)
-
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	// 处理输入数据
 	var friendDto dto.FriendDto
 	decoder := json.NewDecoder(r.Body)
@@ -142,6 +210,7 @@ func handleFriends(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
+
 		friends := method.GetFriends(account)
 		res, _ := json.Marshal(friends)
 		w.WriteHeader(http.StatusOK)
@@ -165,6 +234,7 @@ func handleFriends(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		method.AddFriend(account, friend)
+		method.AddFriend(friend, account)
 		w.WriteHeader(http.StatusNoContent)
 	case http.MethodDelete:
 		// 不能删除自己
@@ -173,14 +243,12 @@ func handleFriends(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "删除失败！不能删除自己")
 			return
 		}
-		if method.DeleteFriend(account, friend) {
+		if method.DeleteFriend(account, friend) && method.DeleteFriend(friend, account) {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(w, "删除失败！")
 		}
-	case http.MethodOptions: // 对于post请求，浏览器首先会发option请求，如果服务器响应完全符合请求要求，浏览器则会发送真正的post请求。
-		w.WriteHeader(http.StatusOK)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}

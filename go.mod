@@ -26,6 +26,7 @@ require (
 	github.com/method v0.0.0
 	github.com/tool v0.0.0
 	github.com/dto v0.0.0
+	github.com/socket v0.0.0
 )
 
 replace (
@@ -34,4 +35,5 @@ replace (
 	github.com/method => ./method
 	github.com/tool => ./tool
 	github.com/dto => ./dto
+	github.com/socket => ./socket
 )

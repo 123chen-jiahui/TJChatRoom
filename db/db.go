@@ -6,6 +6,7 @@ import (
 	"github.com/entity"
 	"github.com/tool"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -104,4 +105,21 @@ func FindUserByAccount(account string) (entity.User, error) {
 		}
 	}
 	return user, err
+}
+
+func InsertGroup(group entity.Group) {
+	group.Id = primitive.NewObjectID()
+	table := DB.Collection("Group")
+	_, _ = table.InsertOne(context.TODO(), group)
+	fmt.Println(group.Id.String())
+}
+
+func GetGroups(account string) []entity.Group {
+	table := DB.Collection("Group")
+	filter := bson.M{"members": bson.M{"member": account}}
+	c, _ := table.Find(context.TODO(), filter)
+	var groups []entity.Group
+	_ = c.All(context.TODO(), &groups)
+	fmt.Println(groups)
+	return groups
 }

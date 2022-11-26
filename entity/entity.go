@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
+)
 
 // 实体集
 
@@ -17,10 +20,15 @@ type Friend struct {
 }
 
 type Group struct {
-	Members    []string  // 群成员
-	Name       string    // 群名称
-	Owner      string    // 群主
-	CreateTime time.Time // 群创建时间
+	Id      primitive.ObjectID `bson:"_id"`
+	Members []Member           // 群成员
+	Name    string             // 群名称
+	Owner   string             // 群主
+	//CreateTime time.Time // 群创建时间
+}
+
+type Member struct {
+	Member string
 }
 
 type Message struct {

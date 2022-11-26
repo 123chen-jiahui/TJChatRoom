@@ -31,6 +31,9 @@ func ParseToken(tokenStr string) (account string) {
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return []byte(MConfig.SecretStr), nil
 	})
+	if token == nil {
+		return
+	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		fmt.Println(claims["Account"])
 		account = fmt.Sprint(claims["Account"])
