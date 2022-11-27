@@ -12,3 +12,7 @@ func AddGroup(group entity.Group) {
 func GetGroups(account string) []entity.Group {
 	return db.GetGroups(account)
 }
+
+func AddMemberToGroup(groupId string, members []string) {
+	db.AddMember(groupId, members)
+}

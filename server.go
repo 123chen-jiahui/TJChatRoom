@@ -55,10 +55,24 @@ func handleGroups(writer http.ResponseWriter, request *http.Request) {
 		group := groupForCreationDto.MapToGroup()
 		// 懒得检查了，直接添加
 		method.AddGroup(group)
-	case http.MethodGet: // 获取所有群聊信息（包括群聊_id)
+	case http.MethodGet: // 获取所有群聊信息（包括群聊_id)，用于用户登录时使用
 		groups := method.GetGroups(account)
 		res, _ := json.Marshal(groups)
 		writer.Write(res)
+	case http.MethodPut: // 群聊中添加成员
+		var groupForUpdateDto dto.GroupForUpdateDto
+		decoder := json.NewDecoder(request.Body)
+		_ = decoder.Decode(&groupForUpdateDto)
+		groupId := groupForUpdateDto.Id
+		list := groupForUpdateDto.List
+		if groupForUpdateDto.Method == "add" {
+			method.AddMemberToGroup(groupId, list)
+		} else if groupForUpdateDto.Method == "delete" {
+			fmt.Println("nothing")
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
 	case http.MethodOptions:
 		writer.WriteHeader(http.StatusOK)
 	}

@@ -107,6 +107,10 @@ func FindUserByAccount(account string) (entity.User, error) {
 	return user, err
 }
 
+//
+// Group
+//
+
 func InsertGroup(group entity.Group) {
 	group.Id = primitive.NewObjectID()
 	table := DB.Collection("Group")
@@ -122,4 +126,46 @@ func GetGroups(account string) []entity.Group {
 	_ = c.All(context.TODO(), &groups)
 	fmt.Println(groups)
 	return groups
+}
+
+//func GetGroupById(groupId string) entity.Group {
+//	objId, err := primitive.ObjectIDFromHex(groupId)
+//	table := DB.Collection("Group")
+//	table.FindOne(context.TODO(), bson.M{})
+//}
+
+func AddMember(groupId string, members []string) {
+	var group entity.Group
+	table := DB.Collection("Group")
+	objId, err := primitive.ObjectIDFromHex(groupId)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(objId)
+	filter := bson.M{"_id": objId}
+	err = table.FindOne(context.TODO(), filter).Decode(&group)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// 防止重复添加，使用map以减小时间开销
+	e := make(map[string]bool)
+	for _, m := range group.Members {
+		e[m.Member] = true
+	}
+	for _, m := range members {
+		if _, ok := e[m]; ok {
+			continue
+		}
+		member := new(entity.Member)
+		member.Member = m
+		update := bson.M{"$push": bson.M{"members": member}}
+		_, err = table.UpdateOne(context.TODO(), filter, update)
+		if err != nil {
+			fmt.Println("添加成员失败", err)
+			return
+		}
+		e[m] = true
+	}
 }

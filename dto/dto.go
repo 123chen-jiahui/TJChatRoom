@@ -26,6 +26,12 @@ type GroupForCreationDto struct {
 	Members []string `json:"members"`
 }
 
+type GroupForUpdateDto struct {
+	Method string   `json:"method"`
+	Id     string   `json:"id"`
+	List   []string `json:"list"`
+}
+
 func (g GroupForCreationDto) MapToGroup() entity.Group {
 	var group = entity.Group{
 		Name:  g.Name,
