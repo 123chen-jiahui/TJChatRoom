@@ -67,8 +67,10 @@ func handleGroups(writer http.ResponseWriter, request *http.Request) {
 		list := groupForUpdateDto.List
 		if groupForUpdateDto.Method == "add" {
 			method.AddMemberToGroup(groupId, list)
+			writer.WriteHeader(http.StatusNoContent)
 		} else if groupForUpdateDto.Method == "delete" {
-			fmt.Println("nothing")
+			method.DeleteMembersFromGroup(groupId, list)
+			writer.WriteHeader(http.StatusNoContent)
 		} else {
 			writer.WriteHeader(http.StatusBadRequest)
 			return

@@ -16,3 +16,7 @@ func GetGroups(account string) []entity.Group {
 func AddMemberToGroup(groupId string, members []string) {
 	db.AddMember(groupId, members)
 }
+
+func DeleteMembersFromGroup(groupId string, members []string) {
+	db.PullMembers(groupId, members)
+}

@@ -169,3 +169,21 @@ func AddMember(groupId string, members []string) {
 		e[m] = true
 	}
 }
+
+func PullMembers(groupId string, members []string) {
+	fmt.Println(members)
+	objId, _ := primitive.ObjectIDFromHex(groupId)
+	fmt.Println(objId)
+	table := DB.Collection("Group")
+	for _, m := range members {
+		_, err := table.UpdateOne(context.TODO(),
+			bson.M{"_id": objId},
+			bson.M{"$pull": bson.M{"members": bson.M{"member": m}}})
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
+	// update := bson.M{"$pull": bson.M{"friends": bson.M{"friend": friend}}}
+}
