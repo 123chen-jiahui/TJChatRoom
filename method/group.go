@@ -20,3 +20,7 @@ func AddMemberToGroup(groupId string, members []string) {
 func DeleteMembersFromGroup(groupId string, members []string) {
 	db.PullMembers(groupId, members)
 }
+
+func DeleteGroup(groupId string, account string) bool {
+	return db.CheckAndRemoveGroup(groupId, account)
+}

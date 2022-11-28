@@ -37,6 +37,10 @@ func main() {
 */
 func handleGroups(writer http.ResponseWriter, request *http.Request) {
 	cros(&writer)
+	if request.Method == http.MethodOptions {
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
 	token := request.Header.Get("Authorization")
 	if len(token) < 8 {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -75,8 +79,15 @@ func handleGroups(writer http.ResponseWriter, request *http.Request) {
 			writer.WriteHeader(http.StatusBadRequest)
 			return
 		}
-	case http.MethodOptions:
-		writer.WriteHeader(http.StatusOK)
+	case http.MethodDelete:
+		query := request.URL.Query()
+		groupId := query["id"][0]
+		if ok := method.DeleteGroup(groupId, account); !ok {
+			writer.WriteHeader(http.StatusBadRequest)
+			writer.Write([]byte("解散群聊失败"))
+		} else {
+			writer.WriteHeader(http.StatusNoContent)
+		}
 	}
 }
 

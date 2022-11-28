@@ -118,6 +118,12 @@ func InsertGroup(group entity.Group) {
 	fmt.Println(group.Id.String())
 }
 
+func RemoveGroup(groupId string) {
+	objId, _ := primitive.ObjectIDFromHex(groupId)
+	table := DB.Collection("Group")
+	table.DeleteOne(context.TODO(), bson.M{"_id": objId})
+}
+
 func GetGroups(account string) []entity.Group {
 	table := DB.Collection("Group")
 	filter := bson.M{"members": bson.M{"member": account}}
@@ -128,11 +134,13 @@ func GetGroups(account string) []entity.Group {
 	return groups
 }
 
-//func GetGroupById(groupId string) entity.Group {
-//	objId, err := primitive.ObjectIDFromHex(groupId)
-//	table := DB.Collection("Group")
-//	table.FindOne(context.TODO(), bson.M{})
-//}
+func GetGroupById(groupId string) entity.Group {
+	var group entity.Group
+	objId, _ := primitive.ObjectIDFromHex(groupId)
+	table := DB.Collection("Group")
+	_ = table.FindOne(context.TODO(), bson.M{"_id": objId}).Decode(&group)
+	return group
+}
 
 func AddMember(groupId string, members []string) {
 	var group entity.Group
@@ -171,19 +179,41 @@ func AddMember(groupId string, members []string) {
 }
 
 func PullMembers(groupId string, members []string) {
-	fmt.Println(members)
-	objId, _ := primitive.ObjectIDFromHex(groupId)
-	fmt.Println(objId)
+	group := GetGroupById(groupId)
+	objId := group.Id
+	memberNum := len(group.Members)
+	var ownerKilled = false
 	table := DB.Collection("Group")
 	for _, m := range members {
-		_, err := table.UpdateOne(context.TODO(),
+		res, err := table.UpdateOne(context.TODO(),
 			bson.M{"_id": objId},
 			bson.M{"$pull": bson.M{"members": bson.M{"member": m}}})
+		if res.ModifiedCount != 0 {
+			memberNum -= 1
+			if m == group.Owner {
+				ownerKilled = true
+			}
+		}
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
+	// 考虑成员数量为0或群主退出的情况
+	if memberNum == 0 {
+		RemoveGroup(groupId)
+	} else if ownerKilled {
+		group = GetGroupById(groupId)
+		table.UpdateOne(context.TODO(), bson.M{"_id": objId}, bson.M{"$set": bson.M{"owner": group.Members[0].Member}})
+	}
+}
 
-	// update := bson.M{"$pull": bson.M{"friends": bson.M{"friend": friend}}}
+func CheckAndRemoveGroup(groupId string, account string) bool {
+	group := GetGroupById(groupId)
+	if group.Owner != account {
+		return false
+	} else {
+		RemoveGroup(groupId)
+		return true
+	}
 }
