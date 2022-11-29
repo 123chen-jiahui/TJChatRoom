@@ -149,9 +149,18 @@ func handleMessages(writer http.ResponseWriter, request *http.Request) {
 			go notice(msg) // notice可能不会立刻返回，所以开一个go routine
 		}
 	case http.MethodGet: // 返回所有未读数据，同时，需要返回最近10条聊天记录
+		// TODO
+		// 该函数有缺陷，因为目前只考虑了对象使用户的情况
+		// 而没有考虑对象是群聊的情况
+		// 思路：在请求中加入参数表示是否对象是否是群聊，其余逻辑类似
 		messages := method.GetAllMessages(account)
 		res, _ := json.Marshal(messages)
 		writer.Write(res)
+	case http.MethodPut: // 将消息设为已读
+		query := request.URL.Query()
+		opposite := query["opposite"][0]
+		isGroup := query["group"][0]
+		method.SetMessagesRead(account, opposite, isGroup)
 	}
 }
 

@@ -23,7 +23,7 @@ type Group struct {
 	Members []Member           // 群成员
 	Name    string             // 群名称
 	Owner   string             // 群主
-	//CreateTime time.Time // 群创建时间
+	// CreateTime time.Time // 群创建时间
 }
 
 type Member struct {

@@ -254,3 +254,20 @@ func GetLatestHistory(me string, opposite string, num int64) []entity.Message {
 	fmt.Println(messages)
 	return messages
 }
+
+// MessagesReadUser 将消息设为已读（对象是用户）
+func MessagesReadUser(me, opposite string) {
+	table := DB.Collection("Message")
+	filter := bson.M{"from": opposite, "to": me}
+	update := bson.M{"$set": bson.M{"read": true}}
+	_, _ = table.UpdateMany(context.TODO(), filter, update)
+}
+
+// MessagesReadGroup 将消息设为已读（对象是群聊）
+func MessagesReadGroup(me, groupId string) {
+	objId, _ := primitive.ObjectIDFromHex(groupId)
+	table := DB.Collection("Message")
+	filter := bson.M{"_id": objId, "to": me}
+	update := bson.M{"$set": bson.M{"read": true}}
+	_, _ = table.UpdateMany(context.TODO(), filter, update)
+}
