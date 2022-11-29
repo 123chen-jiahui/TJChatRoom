@@ -227,3 +227,12 @@ func AddMessage(message entity.Message) {
 	table := DB.Collection("Message")
 	table.InsertOne(context.TODO(), message)
 }
+
+func GetMessages(account string) []entity.Message {
+	table := DB.Collection("Message")
+	filter := bson.M{"to": account, "read": false}
+	c, _ := table.Find(context.TODO(), filter)
+	var messages []entity.Message
+	_ = c.All(context.TODO(), &messages)
+	return messages
+}

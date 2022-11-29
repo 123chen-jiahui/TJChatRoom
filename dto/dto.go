@@ -42,6 +42,19 @@ type MessageForCreation struct {
 	Content     string `json:"content"`     // 信息内容
 }
 
+// MessageDto 返回
+type MessageDto struct {
+	Time        int64
+	Group       string
+	ContentType int
+	Content     string
+}
+
+type MessagesReturn struct {
+	From     string
+	Messages []MessageDto
+}
+
 func (g GroupForCreationDto) MapToGroup() entity.Group {
 	var group = entity.Group{
 		Name:  g.Name,
