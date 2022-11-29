@@ -48,7 +48,16 @@ type MessageDto struct {
 	Group       string
 	ContentType int
 	Content     string
+	Flag        int
+	// Flag为0或1表示历史记录，并且0表示别人发给我的，1表示我发给别人的
+	// Flag为2表示未读信息
 }
+
+type MessageDtoSlice []MessageDto
+
+func (MDS MessageDtoSlice) Len() int           { return len(MDS) }
+func (MDS MessageDtoSlice) Swap(i, j int)      { MDS[i], MDS[j] = MDS[j], MDS[i] }
+func (MDS MessageDtoSlice) Less(i, j int) bool { return MDS[i].Time < MDS[j].Time }
 
 type MessagesReturn struct {
 	From     string

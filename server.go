@@ -148,7 +148,7 @@ func handleMessages(writer http.ResponseWriter, request *http.Request) {
 		for _, msg := range messages {
 			go notice(msg) // notice可能不会立刻返回，所以开一个go routine
 		}
-	case http.MethodGet: // 返回所有未读数据
+	case http.MethodGet: // 返回所有未读数据，同时，需要返回最近10条聊天记录
 		messages := method.GetAllMessages(account)
 		res, _ := json.Marshal(messages)
 		writer.Write(res)
