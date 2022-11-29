@@ -18,6 +18,54 @@ const INTERVAL = 2000 // 心跳检测时间间隔（ms）
 var liveClients []LiveClient
 var mu sync.Mutex
 
+func Debug() {
+	for {
+		mu.Lock()
+		fmt.Println(liveClients)
+		mu.Unlock()
+		time.Sleep(time.Second * 2)
+	}
+}
+
+func AddClient(account string, conn *websocket.Conn) {
+	mu.Lock()
+	defer mu.Unlock()
+	// 坑点：go中for range并不会改变值，例如
+	// a := []int{1, 2, 3}
+	// for i, v := range a {
+	// 	v = 100 * i
+	// 	fmt.Println(v, "->", a[i])
+	// }
+	// 若要改变值：
+	// a := []int{1, 2, 3}
+	// for i, v := range a {
+	// 	a[i] = 100 * i
+	// 	fmt.Println(v, "->", a[i])
+	// }
+	for i, ele := range liveClients {
+		if ele.account == account {
+			liveClients[i].conn = conn
+			return
+		}
+	}
+	liveClients = append(liveClients, LiveClient{
+		account: account,
+		conn:    conn,
+		chHB:    nil,
+	})
+}
+
+func FindClient(account string) *websocket.Conn {
+	mu.Lock()
+	defer mu.Unlock()
+	for _, ele := range liveClients {
+		if account == ele.account {
+			return ele.conn
+		}
+	}
+	return nil
+}
+
 // AddToLiveClients 这里需要检查是否重复登录（不过没有完成）
 func AddToLiveClients(account string, conn *websocket.Conn) chan bool {
 	mu.Lock()
@@ -35,6 +83,17 @@ func AddToLiveClients(account string, conn *websocket.Conn) chan bool {
 		chHB:    newCh,
 	})
 	return newCh
+}
+
+func RemoveClient(account string) {
+	mu.Lock()
+	defer mu.Unlock()
+	for i, ele := range liveClients {
+		if ele.account == account {
+			liveClients = append(liveClients[:i], liveClients[i+1:]...)
+			return
+		}
+	}
 }
 
 func RemoveFromLiveClients(account string) {

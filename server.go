@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dto"
+	"github.com/entity"
 	"github.com/gorilla/websocket"
 	"github.com/method"
 	"github.com/socket"
@@ -18,6 +19,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
+	go socket.Debug()
 	http.HandleFunc("/ws", wsEndpoint)           // 建立websocket连接
 	http.HandleFunc("/register", register)       // 注册
 	http.HandleFunc("/login", login)             // 登录
@@ -91,20 +93,62 @@ func handleGroups(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-// 信息格式
-/*
-{
-	sender: string
-	receiver: string
-	isGroup: bool
-	groupId: xxx
-	contentType: xxx
-	content: string
-	sendTime: time
+// 该函数还要改
+func notice(msg entity.Message) {
+	account := msg.To
+	conn := socket.FindClient(account)
+	if conn == nil {
+		return
+	}
+	res, _ := json.Marshal(msg)
+	err := conn.WriteMessage(websocket.BinaryMessage, res)
+	if err != nil {
+		log.Println("发送失败", err)
+		socket.RemoveClient(account)
+		return
+	}
+	_, p, err := conn.ReadMessage()
+	if err != nil {
+		log.Println("接收失败", err)
+		socket.RemoveClient(account)
+		return
+	}
+	feedBack := string(p)
+	fmt.Println(feedBack)
+	if feedBack == "ok" {
+		fmt.Println("已成功发送给对方")
+		return
+	}
 }
-*/
+
 func handleMessages(writer http.ResponseWriter, request *http.Request) {
 	cros(&writer)
+	if request.Method == http.MethodOptions {
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	token := request.Header.Get("Authorization")
+	if len(token) < 8 {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	account := tool.ParseToken(token[7:]) // 获取token
+	if account == "" {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	switch request.Method {
+	case http.MethodPost:
+		var messageForCreationDto dto.MessageForCreation
+		decoder := json.NewDecoder(request.Body)
+		decoder.Decode(&messageForCreationDto)
+		messages := method.AddMessages(messageForCreationDto)
+		fmt.Println("messages is ", messages)
+		// 通知信息接收者
+		for _, msg := range messages {
+			go notice(msg) // notice可能不会立刻返回，所以开一个go routine
+		}
+	}
 }
 
 // 解决跨域问题
@@ -117,33 +161,41 @@ func cros(writer *http.ResponseWriter) {
 func reader(conn *websocket.Conn) {
 	fmt.Println("jjjjjjjjjjjjjjjjjjj")
 	// 将客户端信息放入liveClients中
-	_, p, _ := conn.ReadMessage()
-	chHb := socket.AddToLiveClients(string(p), conn)
+	// _, p, _ := conn.ReadMessage()
+	// chHb := socket.AddToLiveClients(string(p), conn)
 	// 开一个goroutine发送心跳检测
-	//go socket.HeartBeat(string(p), conn, chHb)
-
+	// go socket.HeartBeat(string(p), conn, chHb)
+	go socket.Debug()
 	for {
 		// read in a message
-		_, p, err := conn.ReadMessage()
+		_, _, err := conn.ReadMessage()
 		if err != nil {
+			if err == websocket.ErrCloseSent {
+				fmt.Println("寄")
+			}
 			log.Println(err)
 			return
 		}
 		// print out that message for clarity
-		if string(p) == "pong" {
-			chHb <- true
+		// if string(p) == "pong" {
+		// 	chHb <- true
+		// }
+
+		// fmt.Println("收到", string(p))
+		err = conn.WriteMessage(websocket.TextMessage, []byte("ping"))
+		if err != nil {
+			log.Println("发送寄了")
 		}
 
-		fmt.Println("收到", string(p))
-
-		//if err := conn.WriteMessage(messageType, []byte("Hello from GoLang!")); err != nil {
-		//	log.Println(err)
-		//	return
-		//}
+		// if err := conn.WriteMessage(messageType, []byte("Hello from GoLang!")); err != nil {
+		// 	log.Println(err)
+		// 	return
+		// }
 	}
 }
 
 func wsEndpoint(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("新的websocket连接")
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 
 	// upgrade this connection to a WebSocket
@@ -153,7 +205,14 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	reader(ws)
+	_, p, err := ws.ReadMessage()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	account := string(p)
+	socket.AddClient(account, ws)
+	// reader(ws)
 }
 
 func register(w http.ResponseWriter, r *http.Request) {

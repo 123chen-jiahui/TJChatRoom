@@ -217,3 +217,13 @@ func CheckAndRemoveGroup(groupId string, account string) bool {
 		return true
 	}
 }
+
+//
+// message
+//
+
+func AddMessage(message entity.Message) {
+	fmt.Println(message)
+	table := DB.Collection("Message")
+	table.InsertOne(context.TODO(), message)
+}

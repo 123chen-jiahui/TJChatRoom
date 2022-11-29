@@ -32,6 +32,16 @@ type GroupForUpdateDto struct {
 	List   []string `json:"list"`
 }
 
+type MessageForCreation struct {
+	Time        int64  `json:"time"`
+	Group       string `json:"group"`       // 信息所属群聊（若是私信，此项为空）
+	From        string `json:"from"`        // 信息发送者
+	To          string `json:"to"`          // 信息接收者
+	Read        bool   `json:"read"`        // 信息接收者是否已经阅读过该消息
+	ContentType int    `json:"contentType"` // 信息内容类型（文本or文件）
+	Content     string `json:"content"`     // 信息内容
+}
+
 func (g GroupForCreationDto) MapToGroup() entity.Group {
 	var group = entity.Group{
 		Name:  g.Name,
@@ -43,4 +53,16 @@ func (g GroupForCreationDto) MapToGroup() entity.Group {
 	}
 	group.Members = members
 	return group
+}
+
+func (m MessageForCreation) MapToMessage(to string) entity.Message {
+	return entity.Message{
+		Time:        m.Time,
+		Group:       m.Group,
+		From:        m.From,
+		To:          to,
+		Read:        false,
+		ContentType: m.ContentType,
+		Content:     m.Content,
+	}
 }
