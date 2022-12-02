@@ -8,30 +8,34 @@ import (
 	"sort"
 )
 
-func AddMessages(messageForCreation dto.MessageForCreation) []entity.Message {
+func ExtendMessages(messageForCreation dto.MessageForCreation) []entity.Message {
 	var group entity.Group
 	var message entity.Message
 	var messages []entity.Message
 	if messageForCreation.Group != "" {
 		group = db.GetGroupById(messageForCreation.Group)
-		// fmt.Println(group)
 		for _, member := range group.Members {
 			if member.Member == messageForCreation.From {
 				continue
 			}
 			message = messageForCreation.MapToMessage(member.Member)
 			messages = append(messages, message)
-			db.AddMessage(message)
-			// db.AddMessage(messageForCreation.MapToMessage(member.Member))
+			// db.AddMessage(message)
 		}
 	} else {
 		message = messageForCreation.MapToMessage(messageForCreation.To)
 		messages = append(messages, message)
-		db.AddMessage(messageForCreation.MapToMessage(messageForCreation.To))
+		// db.AddMessage(messageForCreation.MapToMessage(messageForCreation.To))
 	}
 	return messages
 }
 
+func AddMessage(msg entity.Message, read bool) {
+	msg.Read = read
+	db.AddMessage(msg)
+}
+
+// GetAllMessages 获取n条历史记录+所有未读消息
 func GetAllMessages(account string) []dto.MessagesReturn {
 	m := make(map[string][]dto.MessageDto)
 	user, _ := db.FindUserByAccount(account)

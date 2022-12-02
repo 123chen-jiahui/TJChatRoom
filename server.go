@@ -11,6 +11,7 @@ import (
 	"github.com/tool"
 	"log"
 	"net/http"
+	"time"
 )
 
 var upgrader = websocket.Upgrader{
@@ -96,28 +97,34 @@ func handleGroups(writer http.ResponseWriter, request *http.Request) {
 // 该函数还要改
 func notice(msg entity.Message) {
 	account := msg.To
-	conn := socket.FindClient(account)
-	if conn == nil {
+	clientPtr := socket.FindClient(account)
+	if clientPtr == nil {
+		log.Println("对方不在线")
+		method.AddMessage(msg, false)
 		return
 	}
+	client := *clientPtr
 	res, _ := json.Marshal(msg)
-	err := conn.WriteMessage(websocket.BinaryMessage, res)
+	err := client.Conn.WriteMessage(websocket.BinaryMessage, res)
 	if err != nil {
 		log.Println("发送失败", err)
-		socket.RemoveClient(account)
+		method.AddMessage(msg, false)
 		return
 	}
-	_, p, err := conn.ReadMessage()
-	if err != nil {
-		log.Println("接收失败", err)
-		socket.RemoveClient(account)
-		return
-	}
-	feedBack := string(p)
-	fmt.Println(feedBack)
-	if feedBack == "ok" {
-		fmt.Println("已成功发送给对方")
-		return
+	timeStart := time.Now()
+	for {
+		select {
+		case <-client.ChMsg:
+			fmt.Println("消息已读")
+			method.AddMessage(msg, true)
+			return
+		default:
+			if interval := time.Since(timeStart).Milliseconds(); interval > 500 {
+				method.AddMessage(msg, false)
+				return
+			}
+			time.Sleep(time.Millisecond * 100)
+		}
 	}
 }
 
@@ -142,7 +149,13 @@ func handleMessages(writer http.ResponseWriter, request *http.Request) {
 		var messageForCreationDto dto.MessageForCreation
 		decoder := json.NewDecoder(request.Body)
 		decoder.Decode(&messageForCreationDto)
-		messages := method.AddMessages(messageForCreationDto)
+		// 不应该立刻存到数据库中，如果用户处于实时聊天的状态，这样会增加更新数据库的次数
+		// 并且对于信息的已读或未读状态记录与实际情况不符。这种情况下，信息一定是已读的，
+		// 但是存到数据库中的信息确实未读
+		// 解决方法：先通知目标用户，并且程序等待一段时间，在这段时间内，
+		// 如果用户对该信息给出了正反馈，那么将信息的状态置为已读然后入库；如果用户无响应，
+		// 或是给出了负反馈，那么就将信息的状态置为未读然后入库
+		messages := method.ExtendMessages(messageForCreationDto)
 		fmt.Println("messages is ", messages)
 		// 通知信息接收者
 		for _, msg := range messages {
@@ -172,7 +185,6 @@ func cros(writer *http.ResponseWriter) {
 }
 
 func reader(conn *websocket.Conn) {
-	fmt.Println("jjjjjjjjjjjjjjjjjjj")
 	// 将客户端信息放入liveClients中
 	// _, p, _ := conn.ReadMessage()
 	// chHb := socket.AddToLiveClients(string(p), conn)
@@ -224,8 +236,9 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	account := string(p)
-	socket.AddClient(account, ws)
+	client := socket.AddClient(account, ws)
 	// reader(ws)
+	go client.Reader()
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
