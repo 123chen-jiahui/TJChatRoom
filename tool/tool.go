@@ -8,12 +8,16 @@ import (
 )
 
 type MongoConfig struct {
-	User      string `json:"mongoUser"`
-	Passwd    string `json:"mongoPasswd"`
-	Host      string `json:"mongoHost"`
-	Port      string `json:"mongoPort"`
-	DbName    string `json:"mongoDbName"`
-	SecretStr string `json:"secretStr"`
+	User            string `json:"mongoUser"`
+	Passwd          string `json:"mongoPasswd"`
+	Host            string `json:"mongoHost"`
+	Port            string `json:"mongoPort"`
+	DbName          string `json:"mongoDbName"`
+	SecretStr       string `json:"secretStr"`
+	EndPoint        string `json:"endPoint"`
+	AccessKeyId     string `json:"accessKeyId"`
+	AccessKeySecret string `json:"accessKeySecret"`
+	BucketName      string `json:"bucketName"`
 }
 
 var MConfig MongoConfig

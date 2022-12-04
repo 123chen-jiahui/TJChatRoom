@@ -4,5 +4,9 @@
   "mongoHost": "118.31.108.144",
   "mongoPort": "27017",
   "mongoDbName": "TJChatRoom",
-  "secretStr": "TJChatRoom"
+  "secretStr": "TJChatRoom",
+  "endPoint": "oss-cn-shanghai.aliyuncs.com",
+  "accessKeyId": "LTAI5t8A5fZEVnXHDvmagwZt",
+  "accessKeySecret": "b23SvypcKCkVgUoQXAfI5A9kgVH98I",
+  "bucketName": "tj-chat-room"
 }

@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/dto"
 	"github.com/entity"
 	"github.com/gorilla/websocket"
 	"github.com/method"
 	"github.com/socket"
 	"github.com/tool"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -27,7 +30,77 @@ func main() {
 	http.HandleFunc("/friends", handleFriends)   // 添加好友
 	http.HandleFunc("/groups", handleGroups)     // 群聊
 	http.HandleFunc("/messages", handleMessages) // 发送信息
+	http.HandleFunc("/avatar", handleAvatar)     // 头像操作
 	http.ListenAndServe(":8888", nil)
+}
+
+// 在用户注册时，用户无法指定头像（使用的是默认头像），只有注册完后用户才能在设置界面改头像
+func handleAvatar(writer http.ResponseWriter, request *http.Request) {
+	cros(&writer)
+	if request.Method == http.MethodOptions {
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	token := request.Header.Get("Authorization")
+	if len(token) < 8 {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	account := tool.ParseToken(token[7:]) // 获取token
+	if account == "" {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	switch request.Method {
+	case http.MethodPost:
+		_ = request.ParseMultipartForm(1024 * 1024) // 图片最大不能超过1MB
+		fileHeader := request.MultipartForm.File["upload"][0]
+		file, err := fileHeader.Open()
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		data, err := io.ReadAll(file)
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		fileType := http.DetectContentType(data)
+		if fileType != "image/png" && fileType != "image/jpeg" {
+			writer.WriteHeader(http.StatusBadRequest)
+			writer.Write([]byte("文件类型错误"))
+			return
+		}
+		client, err := oss.New(
+			tool.MConfig.EndPoint,
+			tool.MConfig.AccessKeyId,
+			tool.MConfig.AccessKeySecret)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			log.Println("oss连接失败")
+			return
+		}
+		bucket, err := client.Bucket(tool.MConfig.BucketName)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			log.Println("无法获取桶")
+			return
+		}
+		var fileName string
+		if fileType == "image/jpeg" {
+			fileName = account + ".jpg"
+		} else {
+			fileName = account + ".png"
+		}
+		err = bucket.PutObject("avatar/"+fileName, bytes.NewReader(data))
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusBadRequest)
+			writer.Write([]byte("文件上传错误"))
+		}
+	}
 }
 
 // 创建群聊请求格式
