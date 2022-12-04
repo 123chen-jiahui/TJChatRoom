@@ -66,7 +66,7 @@ func handleGroups(writer http.ResponseWriter, request *http.Request) {
 		groups := method.GetGroups(account)
 		res, _ := json.Marshal(groups)
 		writer.Write(res)
-	case http.MethodPut: // 群聊中添加成员
+	case http.MethodPut: // 群聊中更新成员
 		var groupForUpdateDto dto.GroupForUpdateDto
 		decoder := json.NewDecoder(request.Body)
 		_ = decoder.Decode(&groupForUpdateDto)
@@ -99,7 +99,7 @@ func notice(msg entity.Message) {
 	account := msg.To
 	clientPtr := socket.FindClient(account)
 	if clientPtr == nil {
-		log.Println("对方不在线")
+		log.Println(account, "对方不在线")
 		method.AddMessage(msg, false)
 		return
 	}

@@ -301,3 +301,10 @@ func GetUnreadGroupMessages(account string) []entity.Message {
 	_ = c.All(context.TODO(), &messages)
 	return messages
 }
+
+// DeleteMessagesInGroup 删除某人在某群的聊天记录
+// 我发的不能删，发给我的必须删
+func DeleteMessagesInGroup(account, groupId string) {
+	table := DB.Collection("Message")
+	table.DeleteMany(context.TODO(), bson.M{"to": account, "group": groupId})
+}
