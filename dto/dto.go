@@ -14,6 +14,7 @@ type UserInfoDto struct {
 	Account  string `json:"account"`
 	Passwd   string `json:"passwd"`
 	NickName string `json:"nickName"`
+	Avatar   string `json:"avatar"`
 }
 
 type FriendDto struct {

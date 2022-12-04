@@ -17,6 +17,7 @@ func MapUser(from dto.UserForCreationDto) (to entity.User) {
 		NickName: from.NickName,
 		Friends:  nil,
 		Group:    nil,
+		Avatar:   "default.png",
 	}
 	initFriend := entity.Friend{Friend: to.Account}
 	to.Friends = append(to.Friends, initFriend)
@@ -29,6 +30,7 @@ func MapUserToUserInfoDto(from entity.User) (to dto.UserInfoDto) {
 		Account:  from.Account,
 		Passwd:   from.Passwd,
 		NickName: from.NickName,
+		Avatar:   from.Avatar,
 	}
 	return
 }
@@ -39,6 +41,11 @@ func UserExist(account string) (bool, error) {
 		return false, nil
 	}
 	return true, err
+}
+
+func FindUser(account string) dto.UserInfoDto {
+	user, _ := db.FindUserByAccount(account)
+	return MapUserToUserInfoDto(user)
 }
 
 func CheckLogin(account, passwd string) (token string, err error) {

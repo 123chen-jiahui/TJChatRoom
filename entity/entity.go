@@ -12,6 +12,7 @@ type User struct {
 	NickName string
 	Friends  []Friend // 所加好友
 	Group    []string // 加入的群聊
+	Avatar   string   // 头像
 }
 
 type Friend struct {

@@ -31,7 +31,37 @@ func main() {
 	http.HandleFunc("/groups", handleGroups)     // 群聊
 	http.HandleFunc("/messages", handleMessages) // 发送信息
 	http.HandleFunc("/avatar", handleAvatar)     // 头像操作
+	http.HandleFunc("/user", handleUser)         // 用户操作
 	http.ListenAndServe(":8888", nil)
+}
+
+func handleUser(writer http.ResponseWriter, request *http.Request) {
+	cros(&writer)
+	if request.Method == http.MethodOptions {
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	token := request.Header.Get("Authorization")
+	if len(token) < 8 {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	account := tool.ParseToken(token[7:]) // 获取token
+	if account == "" {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	switch request.Method {
+	case http.MethodGet: // 获取用户信息
+		query := request.URL.Query()
+		who := query["who"][0]
+		fmt.Println("被查找的用户为", who)
+		userInfoDto := method.FindUser(who)
+		fmt.Println(userInfoDto)
+		data, _ := json.Marshal(userInfoDto)
+		writer.WriteHeader(http.StatusOK)
+		writer.Write(data)
+	}
 }
 
 // 在用户注册时，用户无法指定头像（使用的是默认头像），只有注册完后用户才能在设置界面改头像
@@ -344,7 +374,6 @@ func register(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("注册失败！错误原因：" + err.Error()))
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 	case http.MethodOptions: // 对于post请求，浏览器首先会发option请求，如果服务器响应完全符合请求要求，浏览器则会发送真正的post请求。
 		w.WriteHeader(http.StatusOK)
 	default:
