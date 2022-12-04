@@ -15,9 +15,7 @@ func ExtendMessages(messageForCreation dto.MessageForCreation) []entity.Message 
 	if messageForCreation.Group != "" {
 		group = db.GetGroupById(messageForCreation.Group)
 		for _, member := range group.Members {
-			if member.Member == messageForCreation.From {
-				continue
-			}
+			// 我发送给我自己，也要存库。必定是已读的，这点会在入库时体现
 			message = messageForCreation.MapToMessage(member.Member)
 			messages = append(messages, message)
 			// db.AddMessage(message)
@@ -33,10 +31,6 @@ func ExtendMessages(messageForCreation dto.MessageForCreation) []entity.Message 
 func AddMessage(msg entity.Message, read bool) {
 	msg.Read = read
 	db.AddMessage(msg)
-}
-
-func AddGroupMessage(msg entity.GroupMessage) {
-	db.AddGroupMessage(msg)
 }
 
 // GetAllMessages 获取n条历史记录+所有未读消息

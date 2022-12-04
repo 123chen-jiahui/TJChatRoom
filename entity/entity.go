@@ -39,12 +39,3 @@ type Message struct {
 	ContentType int    // 信息内容类型（文本or文件）
 	Content     string // 信息内容
 }
-
-// GroupMessage 群聊信息（没有扩展）
-type GroupMessage struct {
-	Time        int64
-	Group       string
-	From        string
-	ContentType int
-	Content     string
-}

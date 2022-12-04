@@ -90,13 +90,3 @@ func (m MessageForCreation) MapToMessage(to string) entity.Message {
 		Content:     m.Content,
 	}
 }
-
-func (m MessageForCreation) MapToGroupMessage() entity.GroupMessage {
-	return entity.GroupMessage{
-		Time:        m.Time,
-		Group:       m.Group,
-		From:        m.From,
-		ContentType: m.ContentType,
-		Content:     m.Content,
-	}
-}

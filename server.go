@@ -149,9 +149,6 @@ func handleMessages(writer http.ResponseWriter, request *http.Request) {
 		var messageForCreationDto dto.MessageForCreation
 		decoder := json.NewDecoder(request.Body)
 		decoder.Decode(&messageForCreationDto)
-		// if messageForCreationDto.Group != "" { // 若为群聊信息，直接加入
-		// 	method.AddGroupMessage(messageForCreationDto.MapToGroupMessage())
-		// }
 		// 不应该立刻存到数据库中，如果用户处于实时聊天的状态，这样会增加更新数据库的次数
 		// 并且对于信息的已读或未读状态记录与实际情况不符。这种情况下，信息一定是已读的，
 		// 但是存到数据库中的信息确实未读
@@ -162,6 +159,10 @@ func handleMessages(writer http.ResponseWriter, request *http.Request) {
 		fmt.Println("messages is ", messages)
 		// 通知信息接收者
 		for _, msg := range messages {
+			if msg.To == msg.From { // 我发送给我自己，直接存库
+				method.AddMessage(msg, true)
+				continue
+			}
 			go notice(msg) // notice可能不会立刻返回，所以开一个go routine
 		}
 	case http.MethodGet: // 返回所有未读数据，同时，需要返回最近10条聊天记录

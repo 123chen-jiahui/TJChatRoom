@@ -228,16 +228,10 @@ func AddMessage(message entity.Message) {
 	table.InsertOne(context.TODO(), message)
 }
 
-// AddGroupMessage 增加群聊信息（未扩展版）
-func AddGroupMessage(message entity.GroupMessage) {
-	table := DB.Collection("GroupMessage")
-	table.InsertOne(context.TODO(), message)
-}
-
 // GetUnreadMessages 获取普通聊天未读记录
 func GetUnreadMessages(account string) []entity.Message {
 	table := DB.Collection("Message")
-	filter := bson.M{"to": account, "read": false}
+	filter := bson.M{"to": account, "read": false, "group": ""}
 	c, _ := table.Find(context.TODO(), filter)
 	var messages []entity.Message
 	_ = c.All(context.TODO(), &messages)
@@ -250,8 +244,8 @@ func GetLatestHistory(me string, opposite string, num int64) []entity.Message {
 	table := DB.Collection("Message")
 	// 过滤器：已读、且是双方之间的信息
 	xx := []bson.M{
-		{"from": me, "to": opposite},
-		{"from": opposite, "to": me, "read": true},
+		{"from": me, "to": opposite, "group": ""},
+		{"from": opposite, "to": me, "read": true, "group": ""},
 	}
 	filter := bson.M{"$or": xx}                           // 已读信息
 	option1 := options.Find().SetLimit(num)               // 指定聊天记录数量
