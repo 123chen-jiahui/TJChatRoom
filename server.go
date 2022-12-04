@@ -149,13 +149,16 @@ func handleMessages(writer http.ResponseWriter, request *http.Request) {
 		var messageForCreationDto dto.MessageForCreation
 		decoder := json.NewDecoder(request.Body)
 		decoder.Decode(&messageForCreationDto)
+		// if messageForCreationDto.Group != "" { // 若为群聊信息，直接加入
+		// 	method.AddGroupMessage(messageForCreationDto.MapToGroupMessage())
+		// }
 		// 不应该立刻存到数据库中，如果用户处于实时聊天的状态，这样会增加更新数据库的次数
 		// 并且对于信息的已读或未读状态记录与实际情况不符。这种情况下，信息一定是已读的，
 		// 但是存到数据库中的信息确实未读
 		// 解决方法：先通知目标用户，并且程序等待一段时间，在这段时间内，
 		// 如果用户对该信息给出了正反馈，那么将信息的状态置为已读然后入库；如果用户无响应，
 		// 或是给出了负反馈，那么就将信息的状态置为未读然后入库
-		messages := method.ExtendMessages(messageForCreationDto)
+		messages := method.ExtendMessages(messageForCreationDto) // 扩展信息
 		fmt.Println("messages is ", messages)
 		// 通知信息接收者
 		for _, msg := range messages {

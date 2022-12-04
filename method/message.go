@@ -35,6 +35,10 @@ func AddMessage(msg entity.Message, read bool) {
 	db.AddMessage(msg)
 }
 
+func AddGroupMessage(msg entity.GroupMessage) {
+	db.AddGroupMessage(msg)
+}
+
 // GetAllMessages 获取n条历史记录+所有未读消息
 func GetAllMessages(account string) []dto.MessagesReturn {
 	m := make(map[string][]dto.MessageDto)
@@ -62,7 +66,26 @@ func GetAllMessages(account string) []dto.MessagesReturn {
 			})
 		}
 	}
-	fmt.Println("half way", m)
+	// 增加所有群聊的历史记录
+	groups := GetGroups(account)
+	for _, group := range groups {
+		histories := db.GetLatestHistoriesOfGroup(account, group.Id.Hex(), 10)
+		for _, h := range histories {
+			var flag int
+			if h.From == account {
+				flag = 1
+			}
+			m[group.Id.Hex()] = append(m[group.Id.Hex()], dto.MessageDto{
+				Time:        h.Time,
+				Group:       h.Group,
+				GroupMember: h.From,
+				ContentType: h.ContentType,
+				Content:     h.Content,
+				Flag:        flag,
+			})
+		}
+	}
+
 	// 增加未读记录
 	messages := db.GetUnreadMessages(account)
 	fmt.Println("未读记录", messages)
@@ -75,12 +98,30 @@ func GetAllMessages(account string) []dto.MessagesReturn {
 			Flag:        2,
 		})
 	}
+
+	// 增加群聊未读记录
+	groupMessages := db.GetUnreadGroupMessages(account)
+	for _, message := range groupMessages {
+		m[message.Group] = append(m[message.Group], dto.MessageDto{
+			Time:        message.Time,
+			Group:       message.Group,
+			GroupMember: message.From,
+			ContentType: message.ContentType,
+			Content:     message.Content,
+			Flag:        2,
+		})
+	}
 	// 整理、排序
 	var messagesReturns []dto.MessagesReturn
 	for k, v := range m {
 		sort.Sort(dto.MessageDtoSlice(v))
+		isGroup := false
+		if len(k) > 10 {
+			isGroup = true
+		}
 		messagesReturns = append(messagesReturns, dto.MessagesReturn{
 			From:     k,
+			IsGroup:  isGroup,
 			Messages: v,
 		})
 	}

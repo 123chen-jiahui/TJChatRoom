@@ -228,6 +228,13 @@ func AddMessage(message entity.Message) {
 	table.InsertOne(context.TODO(), message)
 }
 
+// AddGroupMessage 增加群聊信息（未扩展版）
+func AddGroupMessage(message entity.GroupMessage) {
+	table := DB.Collection("GroupMessage")
+	table.InsertOne(context.TODO(), message)
+}
+
+// GetUnreadMessages 获取普通聊天未读记录
 func GetUnreadMessages(account string) []entity.Message {
 	table := DB.Collection("Message")
 	filter := bson.M{"to": account, "read": false}
@@ -265,9 +272,38 @@ func MessagesReadUser(me, opposite string) {
 
 // MessagesReadGroup 将消息设为已读（对象是群聊）
 func MessagesReadGroup(me, groupId string) {
-	objId, _ := primitive.ObjectIDFromHex(groupId)
 	table := DB.Collection("Message")
-	filter := bson.M{"_id": objId, "to": me}
+	filter := bson.M{"group": groupId, "to": me}
 	update := bson.M{"$set": bson.M{"read": true}}
 	_, _ = table.UpdateMany(context.TODO(), filter, update)
+}
+
+// GetLatestHistoriesOfGroup 返回群聊的历史记录
+func GetLatestHistoriesOfGroup(account, groupId string, num int64) []entity.Message {
+	// var messages []entity.GroupMessage
+	// table := DB.Collection("GroupMessage")
+	// filter := bson.M{"group": groupId}
+	// option1 := options.Find().SetLimit(num)
+	// option2 := options.Find().SetSort(bson.M{"time": -1})
+	// c, _ := table.Find(context.TODO(), filter, option1, option2)
+	// _ = c.All(context.TODO(), &messages)
+	// return messages
+
+	var messages []entity.Message
+	table := DB.Collection("Message")
+	filter := bson.M{"group": groupId, "to": account, "read": true}
+	option1 := options.Find().SetLimit(num)
+	option2 := options.Find().SetSort(bson.M{"time": -1})
+	c, _ := table.Find(context.TODO(), filter, option1, option2)
+	_ = c.All(context.TODO(), &messages)
+	return messages
+}
+
+func GetUnreadGroupMessages(account string) []entity.Message {
+	table := DB.Collection("Message")
+	filter := bson.M{"to": account, "read": false, "group": bson.M{"$ne": ""}}
+	c, _ := table.Find(context.TODO(), filter)
+	var messages []entity.Message
+	_ = c.All(context.TODO(), &messages)
+	return messages
 }

@@ -45,7 +45,8 @@ type MessageForCreation struct {
 // MessageDto 返回
 type MessageDto struct {
 	Time        int64
-	Group       string
+	Group       string // 无用
+	GroupMember string // 只有当IsGroup为true时，这项才有用，表示群里的谁
 	ContentType int
 	Content     string
 	Flag        int
@@ -60,7 +61,8 @@ func (MDS MessageDtoSlice) Swap(i, j int)      { MDS[i], MDS[j] = MDS[j], MDS[i]
 func (MDS MessageDtoSlice) Less(i, j int) bool { return MDS[i].Time < MDS[j].Time }
 
 type MessagesReturn struct {
-	From     string
+	From     string // 聊天对象，如果IsGroup为true，表示GroupId
+	IsGroup  bool   // 聊天对象是否是群聊
 	Messages []MessageDto
 }
 
@@ -84,6 +86,16 @@ func (m MessageForCreation) MapToMessage(to string) entity.Message {
 		From:        m.From,
 		To:          to,
 		Read:        false,
+		ContentType: m.ContentType,
+		Content:     m.Content,
+	}
+}
+
+func (m MessageForCreation) MapToGroupMessage() entity.GroupMessage {
+	return entity.GroupMessage{
+		Time:        m.Time,
+		Group:       m.Group,
+		From:        m.From,
 		ContentType: m.ContentType,
 		Content:     m.Content,
 	}
