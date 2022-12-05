@@ -40,6 +40,30 @@ func InsertUser(user entity.User) error {
 	return err
 }
 
+func UpdateUserAvatar(account, avatarUrl string) {
+	table := DB.Collection("User")
+	table.UpdateOne(
+		context.TODO(),
+		bson.M{"account": account},
+		bson.M{"$set": bson.M{"avatar": avatarUrl}})
+}
+
+func UpdateUserNickName(account, nickName string) {
+	table := DB.Collection("User")
+	table.UpdateOne(
+		context.TODO(),
+		bson.M{"account": account},
+		bson.M{"$set": bson.M{"nickname": nickName}})
+}
+
+func UpdateUserPassword(account, password string) {
+	table := DB.Collection("User")
+	table.UpdateOne(
+		context.TODO(),
+		bson.M{"account": account},
+		bson.M{"$set": bson.M{"password": password}})
+}
+
 func PushFriend(account, friend string) {
 	table := DB.Collection("User")
 	filter := bson.M{"account": account}

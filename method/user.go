@@ -48,6 +48,18 @@ func FindUser(account string) dto.UserInfoDto {
 	return MapUserToUserInfoDto(user)
 }
 
+func UpdateUser(account, avatar, nickName, password string) {
+	if avatar != "" {
+		db.UpdateUserAvatar(account, avatar)
+	}
+	if nickName != "" {
+		db.UpdateUserNickName(account, nickName)
+	}
+	if password != "" {
+		db.UpdateUserPassword(account, password)
+	}
+}
+
 func CheckLogin(account, passwd string) (token string, err error) {
 	token = ""
 	err = nil

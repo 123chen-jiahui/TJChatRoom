@@ -53,14 +53,27 @@ func handleUser(writer http.ResponseWriter, request *http.Request) {
 	}
 	switch request.Method {
 	case http.MethodGet: // 获取用户信息
+		who := account
 		query := request.URL.Query()
-		who := query["who"][0]
+		if len(query["who"]) != 0 {
+			who = query["who"][0]
+		}
 		fmt.Println("被查找的用户为", who)
 		userInfoDto := method.FindUser(who)
 		fmt.Println(userInfoDto)
 		data, _ := json.Marshal(userInfoDto)
 		writer.WriteHeader(http.StatusOK)
 		writer.Write(data)
+	case http.MethodPut: // 更新用户信息
+		request.ParseMultipartForm(1024)
+		if len(request.MultipartForm.Value["nickName"]) != 0 {
+			nickName := request.MultipartForm.Value["nickName"][0]
+			method.UpdateUser(account, "", nickName, "")
+		}
+		if len(request.MultipartForm.Value["password"]) != 0 {
+			password := request.MultipartForm.Value["password"][0]
+			method.UpdateUser(account, "", "", password)
+		}
 	}
 }
 
@@ -68,6 +81,7 @@ func handleUser(writer http.ResponseWriter, request *http.Request) {
 func handleAvatar(writer http.ResponseWriter, request *http.Request) {
 	cros(&writer)
 	if request.Method == http.MethodOptions {
+		fmt.Println("options 请求")
 		writer.WriteHeader(http.StatusOK)
 		return
 	}
@@ -130,6 +144,7 @@ func handleAvatar(writer http.ResponseWriter, request *http.Request) {
 			writer.WriteHeader(http.StatusBadRequest)
 			writer.Write([]byte("文件上传错误"))
 		}
+		method.UpdateUser(account, fileName, "", "")
 	}
 }
 
