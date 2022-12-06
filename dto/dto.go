@@ -51,6 +51,7 @@ type MessageDto struct {
 	GroupMember string // 只有当IsGroup为true时，这项才有用，表示群里的谁
 	ContentType int
 	Content     string
+	RemoteName  string // 只对文件message有效
 	Flag        int
 	// Flag为0或1表示历史记录，并且0表示别人发给我的，1表示我发给别人的
 	// Flag为2表示未读信息

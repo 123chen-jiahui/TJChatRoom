@@ -56,6 +56,7 @@ func GetAllMessages(account string) []dto.MessagesReturn {
 				Group:       h.Group,
 				ContentType: h.ContentType,
 				Content:     h.Content,
+				RemoteName:  h.RemoteName,
 				Flag:        flag,
 			})
 		}
@@ -75,6 +76,7 @@ func GetAllMessages(account string) []dto.MessagesReturn {
 				GroupMember: h.From,
 				ContentType: h.ContentType,
 				Content:     h.Content,
+				RemoteName:  h.RemoteName,
 				Flag:        flag,
 			})
 		}
@@ -89,6 +91,7 @@ func GetAllMessages(account string) []dto.MessagesReturn {
 			Group:       message.Group,
 			ContentType: message.ContentType,
 			Content:     message.Content,
+			RemoteName:  message.RemoteName,
 			Flag:        2,
 		})
 	}
@@ -102,6 +105,7 @@ func GetAllMessages(account string) []dto.MessagesReturn {
 			GroupMember: message.From,
 			ContentType: message.ContentType,
 			Content:     message.Content,
+			RemoteName:  message.RemoteName,
 			Flag:        2,
 		})
 	}
