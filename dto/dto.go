@@ -41,6 +41,7 @@ type MessageForCreation struct {
 	Read        bool   `json:"read"`        // 信息接收者是否已经阅读过该消息
 	ContentType int    `json:"contentType"` // 信息内容类型（文本or文件）
 	Content     string `json:"content"`     // 信息内容
+	RemoteName  string // 非文件message，本字段无用
 }
 
 // MessageDto 返回
@@ -81,7 +82,7 @@ func (g GroupForCreationDto) MapToGroup() entity.Group {
 }
 
 func (m MessageForCreation) MapToMessage(to string) entity.Message {
-	return entity.Message{
+	message := entity.Message{
 		Time:        m.Time,
 		Group:       m.Group,
 		From:        m.From,
@@ -89,5 +90,7 @@ func (m MessageForCreation) MapToMessage(to string) entity.Message {
 		Read:        false,
 		ContentType: m.ContentType,
 		Content:     m.Content,
+		RemoteName:  m.RemoteName,
 	}
+	return message
 }

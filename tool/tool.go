@@ -3,6 +3,7 @@ package tool
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"log"
 	"os"
 )
@@ -21,6 +22,7 @@ type MongoConfig struct {
 }
 
 var MConfig MongoConfig
+var OssClient *oss.Client
 var MongoUrl string
 
 func init() {
@@ -41,4 +43,12 @@ func init() {
 		MConfig.Host,
 		MConfig.Port,
 	)
+
+	OssClient, err = oss.New(
+		MConfig.EndPoint,
+		MConfig.AccessKeyId,
+		MConfig.AccessKeySecret)
+	if err != nil {
+		panic(err)
+	}
 }

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/dto"
 	"github.com/entity"
+	uuid2 "github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/method"
 	"github.com/socket"
@@ -14,6 +14,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -30,6 +31,7 @@ func main() {
 	http.HandleFunc("/friends", handleFriends)   // 添加好友
 	http.HandleFunc("/groups", handleGroups)     // 群聊
 	http.HandleFunc("/messages", handleMessages) // 发送信息
+	http.HandleFunc("/file", handleFiles)        // 发送文件
 	http.HandleFunc("/avatar", handleAvatar)     // 头像操作
 	http.HandleFunc("/user", handleUser)         // 用户操作
 	http.ListenAndServe(":8888", nil)
@@ -117,16 +119,7 @@ func handleAvatar(writer http.ResponseWriter, request *http.Request) {
 			writer.Write([]byte("文件类型错误"))
 			return
 		}
-		client, err := oss.New(
-			tool.MConfig.EndPoint,
-			tool.MConfig.AccessKeyId,
-			tool.MConfig.AccessKeySecret)
-		if err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
-			log.Println("oss连接失败")
-			return
-		}
-		bucket, err := client.Bucket(tool.MConfig.BucketName)
+		bucket, err := tool.OssClient.Bucket(tool.MConfig.BucketName)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			log.Println("无法获取桶")
@@ -296,6 +289,102 @@ func handleMessages(writer http.ResponseWriter, request *http.Request) {
 		opposite := query["opposite"][0]
 		isGroup := query["group"][0]
 		method.SetMessagesRead(account, opposite, isGroup)
+	}
+}
+
+func handleFiles(writer http.ResponseWriter, request *http.Request) {
+	cros(&writer)
+	if request.Method == http.MethodOptions {
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	token := request.Header.Get("Authorization")
+	if len(token) < 8 {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	account := tool.ParseToken(token[7:]) // 获取token
+	if account == "" {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	switch request.Method {
+	case http.MethodPost:
+		// 获取表单数据
+		_ = request.ParseMultipartForm(1024 * 1024) // 文件最大不能超过1MB
+		// 判断文件是否存在
+		if len(request.MultipartForm.File["upload"]) == 0 {
+			writer.WriteHeader(http.StatusBadRequest)
+			writer.Write([]byte("至少选择一份文件"))
+			return
+		}
+		// 判断文件数量是否为1
+		if len(request.MultipartForm.File["upload"]) > 1 {
+			writer.WriteHeader(http.StatusBadRequest)
+			writer.Write([]byte("一次只能上传一份文件"))
+			return
+		}
+		// 文件msg的基本信息
+		var t, group, to, content string
+		fileHeader := request.MultipartForm.File["upload"][0]
+		t = request.MultipartForm.Value["time"][0]
+		timeInt64, _ := strconv.ParseInt(t, 10, 64)
+		if len(request.MultipartForm.Value["group"]) != 0 {
+			group = request.MultipartForm.Value["group"][0]
+		} else {
+			to = request.MultipartForm.Value["to"][0]
+		}
+		content = fileHeader.Filename
+
+		file, err := fileHeader.Open()
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		data, err := io.ReadAll(file)
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// 用uuid重命名，存到oss
+		uuid, _ := uuid2.NewUUID()
+		uuidString := uuid.String()
+		messageForCreation := dto.MessageForCreation{
+			Time:        timeInt64,
+			Group:       group,
+			From:        account,
+			To:          to,
+			Read:        false,
+			ContentType: 0,
+			Content:     content,
+			RemoteName:  uuidString,
+		}
+		fmt.Println(messageForCreation)
+
+		bucket, err := tool.OssClient.Bucket(tool.MConfig.BucketName)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			log.Println("无法获取桶")
+			return
+		}
+		err = bucket.PutObject("files/"+uuidString, bytes.NewReader(data))
+		if err != nil {
+			log.Println(err)
+			writer.WriteHeader(http.StatusBadRequest)
+			writer.Write([]byte("文件上传错误"))
+		}
+
+		messages := method.ExtendMessages(messageForCreation)
+		for _, msg := range messages {
+			if msg.To == msg.From {
+				method.AddMessage(msg, true)
+				continue
+			}
+			go notice(msg)
+		}
 	}
 }
 

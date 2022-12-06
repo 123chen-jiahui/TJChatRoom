@@ -38,5 +38,7 @@ type Message struct {
 	To          string // 信息接收者
 	Read        bool   // 信息接收者是否已经阅读过该消息
 	ContentType int    // 信息内容类型（文本or文件）
-	Content     string // 信息内容
+	Content     string // 信息内容，对于文件，表示文件名，确切说是上传时的文件名
+	RemoteName  string // 仅用于信息内容为文件，表示存在oss中的文件名，为了避免重名
+	// 获取文件资源时，用的时RemoteName，而用户下载文件的时候，用的还是Content
 }
