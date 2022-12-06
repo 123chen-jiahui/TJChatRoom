@@ -385,6 +385,9 @@ func handleFiles(writer http.ResponseWriter, request *http.Request) {
 			}
 			go notice(msg)
 		}
+
+		// 需要返回文件名
+		writer.Write([]byte(uuidString))
 	}
 }
 
