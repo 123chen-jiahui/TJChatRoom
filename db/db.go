@@ -61,7 +61,7 @@ func UpdateUserPassword(account, password string) {
 	table.UpdateOne(
 		context.TODO(),
 		bson.M{"account": account},
-		bson.M{"$set": bson.M{"password": password}})
+		bson.M{"$set": bson.M{"passwd": password}})
 }
 
 func PushFriend(account, friend string) {
