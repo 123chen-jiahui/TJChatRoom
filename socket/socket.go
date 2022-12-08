@@ -14,8 +14,6 @@ type LiveClient struct {
 	ChHeal  chan bool
 }
 
-const INTERVAL = 2000 // 心跳检测时间间隔（ms）
-
 var liveClients []LiveClient
 var mu sync.Mutex
 
@@ -101,41 +99,5 @@ func (liveClient *LiveClient) Reader() {
 		}
 		fmt.Println("收到了来自客户端的反馈：", string(p))
 		chMsg <- string(p)
-	}
-}
-
-func heartBeat(account string, conn *websocket.Conn, ch chan bool) {
-	err := conn.WriteMessage(websocket.TextMessage, []byte("ping")) // 发送心跳检查
-	if err != nil {
-		fmt.Println("心跳检测发送失败！")
-		RemoveClient(account)
-		return
-	}
-	timeSent := time.Now()
-	for {
-		time.Sleep(time.Millisecond * 100)
-		select {
-		case flag := <-ch:
-			if !flag {
-				fmt.Println("客户端退出")
-				RemoveClient(account)
-				return
-			}
-			fmt.Println("心跳检测成功！")
-			timeSent = time.Now()
-			err := conn.WriteMessage(websocket.TextMessage, []byte("ping")) // 发送心跳检查
-			if err != nil {
-				fmt.Println("心跳检测发送失败！")
-				RemoveClient(account)
-				return
-			}
-		default:
-			interval := time.Since(timeSent).Milliseconds()
-			if interval > INTERVAL { // 超时
-				fmt.Println("连接超时！")
-				RemoveClient(account)
-				return
-			}
-		}
 	}
 }

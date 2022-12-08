@@ -126,10 +126,6 @@ func GetAllMessages(account string) []dto.MessagesReturn {
 	return messagesReturns
 }
 
-func GetLatestHistory(a, b string, num int64) []entity.Message {
-	return db.GetLatestHistory(a, b, num)
-}
-
 func SetMessagesRead(me, opposite, isGroup string) {
 	if isGroup == "1" { // opposite 表示群聊号
 		db.MessagesReadGroup(me, opposite)
