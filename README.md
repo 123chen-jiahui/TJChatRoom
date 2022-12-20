@@ -228,7 +228,7 @@ type Message struct {
 传文件：
 ![](./icon/file.png)
 ……
-更多功能不便于图片展示，请登录网页查看：118.31.108.144:8080/TJChatRoomClient/login.html
+更多功能不便于图片展示，请登录网页查看：118.31.108.144:8023/TJChatRoomClient/login.html
 提供三个现成的账号：
 | 账号 | 密码 |
 |-|-|
